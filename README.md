@@ -1,6 +1,6 @@
 # Предмет
 
-Название предмета
+Information Storage and Management
 
 # Проект
 
