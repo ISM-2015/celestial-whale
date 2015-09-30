@@ -1,10 +1,10 @@
-# Предмет
+# Course name
 
 Information Storage and Management
 
-# Проект
+# Project name
 
-Название проекта
+No name
 
 # Contributors
 
