@@ -16,11 +16,14 @@ import java.util.Date;
  */
 public class TarDecompresser {
 
-    String outputDir = null;
-    String inputDir = null;
     String inputFile = null;
     String basicDir = null;
     String outputName = null;
+    List<File> files = null;
+
+    public List<File> getFiles() {
+        return files;
+    }
 
     public String getOutputName() {
         return outputName;
@@ -34,10 +37,10 @@ public class TarDecompresser {
     public void decompress() {
         File input = new File(basicDir, inputFile);
         outputName = String.valueOf((new Date()).getTime());
-        File output = new File(basicDir + outputName);
+        File output = new File(basicDir + "/" + outputName);
         output.mkdir();
         try {
-            unTar(input, output);
+            files = unTar(input, output);
         } catch (Exception e) {
             System.out.println("Decompessing error: " + e.toString());
         }
@@ -45,7 +48,7 @@ public class TarDecompresser {
 
     private static List<File> unTar(final File inputFile, final File outputDir) throws FileNotFoundException, IOException, ArchiveException {
 
-        System.out.println(String.format("Untaring %s to dir %s.", inputFile.getAbsolutePath(), outputDir.getAbsolutePath()));
+        //System.out.println(String.format("Untaring %s to dir %s.", inputFile.getAbsolutePath(), outputDir.getAbsolutePath()));
 
         final List<File> untaredFiles = new LinkedList<File>();
         final InputStream is = new FileInputStream(inputFile);
@@ -54,15 +57,15 @@ public class TarDecompresser {
         while ((entry = (TarArchiveEntry)debInputStream.getNextEntry()) != null) {
             final File outputFile = new File(outputDir, entry.getName());
             if (entry.isDirectory()) {
-                System.out.println(String.format("Attempting to write output directory %s.", outputFile.getAbsolutePath()));
+               // System.out.println(String.format("Attempting to write output directory %s.", outputFile.getAbsolutePath()));
                 if (!outputFile.exists()) {
-                    System.out.println(String.format("Attempting to create output directory %s.", outputFile.getAbsolutePath()));
+                    //System.out.println(String.format("Attempting to create output directory %s.", outputFile.getAbsolutePath()));
                     if (!outputFile.mkdirs()) {
                         throw new IllegalStateException(String.format("Couldn't create directory %s.", outputFile.getAbsolutePath()));
                     }
                 }
             } else {
-                System.out.println(String.format("Creating output file %s.", outputFile.getAbsolutePath()));
+                //System.out.println(String.format("Creating output file %s.", outputFile.getAbsolutePath()));
                 final OutputStream outputFileStream = new FileOutputStream(outputFile);
                 IOUtils.copy(debInputStream, outputFileStream);
                 outputFileStream.close();

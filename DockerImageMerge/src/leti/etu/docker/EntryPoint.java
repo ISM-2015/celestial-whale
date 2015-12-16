@@ -1,5 +1,7 @@
 package leti.etu.docker;
 
+import leti.etu.docker.merge.Image;
+import leti.etu.docker.merge.Layer;
 import leti.etu.docker.util.TarDecompresser;
 
 /**
@@ -8,7 +10,10 @@ import leti.etu.docker.util.TarDecompresser;
 public class EntryPoint {
 
     public static void main(String[] args) {
-        TarDecompresser decompresser = new TarDecompresser("/home/lightwave/ideaTest/", "test.tar");
+        TarDecompresser decompresser = new TarDecompresser("/home/lightwave/ideaTest", "test.tar");
         decompresser.decompress();
+        Image img = new Image(decompresser.getFiles());
+        Layer top = img.getTopLayer();
+        System.out.println("Top layer:" + top.getId());
     }
 }
