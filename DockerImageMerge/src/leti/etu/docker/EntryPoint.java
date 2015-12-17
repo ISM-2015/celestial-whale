@@ -10,10 +10,8 @@ import leti.etu.docker.util.TarDecompresser;
 public class EntryPoint {
 
     public static void main(String[] args) {
-        TarDecompresser decompresser = new TarDecompresser("/home/lightwave/ideaTest", "test.tar");
-        decompresser.decompress();
-        Image img = new Image(decompresser.getFiles());
-        Layer top = img.getTopLayer();
-        System.out.println("Top layer:" + top.getId());
+        Image img = new Image("/home/lightwave/ideaTest", "testtest.tar");
+        Image img2 = new Image("/home/lightwave/ideaTest", "happ.tar");
+        img2.addLayer(img.getTopLayer());
     }
 }

@@ -1,13 +1,12 @@
 package leti.etu.docker.merge;
 
+import leti.etu.docker.util.FileUtils;
 import leti.etu.docker.util.TarDecompresser;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -16,6 +15,9 @@ import java.util.List;
 public class Layer {
 
     File layerDir;
+    File json;
+    File layer;
+    File version;
     JSONObject metainfo;
     List<File> changes;
     String id;
@@ -27,13 +29,16 @@ public class Layer {
         this.layerDir = layerDir;
         if(layerDir.isDirectory()) {
             File[] files = layerDir.listFiles();
-            File json = null;
-            File layer = null;
+            json = null;
+            layer = null;
+            version = null;
             for(int i=0; i< files.length; i++) {
                 if (files[i].getName().equals("json"))
                     json = files[i];
                 if (files[i].getName().equals("layer.tar"))
                     layer = files[i];
+                if (files[i].getName().equals("VERSION"))
+                    version = files[i];
 
             }
             processJsonFile(json);
@@ -70,6 +75,82 @@ public class Layer {
         TarDecompresser decompresser = new TarDecompresser(layerDir.getAbsolutePath(), tar.getName());
         decompresser.decompress();
         changes = decompresser.getFiles();
+    }
+
+    public Layer copyLayerTo(String path, String newID, String parent) {
+        path = path + "/" + newID;
+        List<File> layerFiles = new ArrayList<File>();
+        File newLayerDir = new File(path);
+        newLayerDir.mkdir();
+        System.out.println("New layer ID: " + newID );
+        JSONObject newMeta = (JSONObject) metainfo.clone();
+        newMeta.put("id", newID);
+        newMeta.put("parent", parent);
+        File newJson = new File(path + "/json" );
+        try {
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(newJson)));
+            writer.write(newMeta.toJSONString());
+            writer.close();
+        } catch (Exception e) {
+            System.out.println("New layer json creation error: " + e.toString());
+        }
+        File newTar = new File(path + "/layer.tar");
+        try {
+            FileUtils.copy(layer, newTar);
+        } catch (Exception e) {
+            System.out.println("New layer file creation error: " + e.toString());
+        }
+        File newVers = new File(path + "/VERSION");
+        try {
+            FileUtils.copy(version, newVers);
+        } catch (Exception e) {
+            System.out.println("New layer version creation error: " + e.toString());
+        }
+        return null;
+    }
+
+    public File getJson() {
+        return json;
+    }
+
+    public void setJson(File json) {
+        this.json = json;
+    }
+
+    public File getLayer() {
+        return layer;
+    }
+
+    public void setLayer(File layer) {
+        this.layer = layer;
+    }
+
+    public File getVersion() {
+        return version;
+    }
+
+    public void setVersion(File version) {
+        this.version = version;
+    }
+
+    public File getLayerDir() {
+        return layerDir;
+    }
+
+    public void setLayerDir(File layerDir) {
+        this.layerDir = layerDir;
+    }
+
+    public void setMetainfo(JSONObject metainfo) {
+        this.metainfo = metainfo;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setParent(String parent) {
+        this.parent = parent;
     }
 
     public JSONObject getMetainfo() {
