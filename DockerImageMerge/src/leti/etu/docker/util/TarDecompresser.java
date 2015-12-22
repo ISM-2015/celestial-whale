@@ -4,6 +4,7 @@ import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.utils.IOUtils;
 
 import java.io.*;
@@ -70,7 +71,8 @@ public class TarDecompresser {
                 IOUtils.copy(debInputStream, outputFileStream);
                 outputFileStream.close();
             }
-            untaredFiles.add(outputFile);
+            if(entry.getName().indexOf('/') + 1 == entry.getName().length() || entry.getName().indexOf('/') == -1 )
+                untaredFiles.add(outputFile);
         }
         debInputStream.close();
 

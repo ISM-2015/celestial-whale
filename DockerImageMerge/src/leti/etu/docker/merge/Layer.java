@@ -19,7 +19,7 @@ public class Layer {
     File layer;
     File version;
     JSONObject metainfo;
-    List<File> changes;
+    List<File> changes = null;
     String id;
     String parent = null;
 
@@ -163,5 +163,16 @@ public class Layer {
 
     public String getParent() {
         return parent;
+    }
+
+    public List<File> getChanges() {
+        if(changes == null) {
+            processTarFile(layer);
+        }
+        return changes;
+    }
+
+    public void setChanges(List<File> changes) {
+        this.changes = changes;
     }
 }

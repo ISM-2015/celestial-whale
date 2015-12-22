@@ -3,6 +3,7 @@ package leti.etu.docker.merge;
 import leti.etu.docker.util.FileUtils;
 import leti.etu.docker.util.ImageIdGenerator;
 import leti.etu.docker.util.TarDecompresser;
+import org.json.simple.JSONObject;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -19,8 +20,15 @@ public class Image {
     TarDecompresser decompresser;
     String basicDir;
     String fileName;
+    File repossitories;
+    JSONObject reps;
+
+    public List<File> getFiles() {
+        return files;
+    }
 
     public Image(String basicDir, String fileName) {
+
         this.basicDir = basicDir;
         this.fileName = fileName;
         layers = new ArrayList<Layer>();
@@ -28,6 +36,9 @@ public class Image {
         decompresser.decompress();
         files = decompresser.getFiles();
         for(int i = 0; i < files.size(); i++) {
+            if(files.get(i).getName().equals("repositories")) {
+
+            }
             if(files.get(i).isDirectory()) {
                 Layer temp = new Layer(files.get(i));
                 layers.add(temp);
@@ -88,5 +99,19 @@ public class Image {
             }
         }
         return null;
+    }
+
+    public boolean merge(Image toMerge) {
+        Layer current = getTopLayer();
+        Layer add = toMerge.getTopLayer();
+        if(current.getParent().equals(add.getParent())) {
+            System.out.println("Images have diffrent parents");
+            return false;
+        }
+        List<File> first = current.getChanges(), second = current.getChanges();
+
+        return  true;
+
+
     }
 }
