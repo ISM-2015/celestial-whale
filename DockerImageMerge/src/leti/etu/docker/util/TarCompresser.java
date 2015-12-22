@@ -41,6 +41,8 @@ public class TarCompresser {
     private static void addFilesToCompression(TarArchiveOutputStream taos, File file, String dir)
             throws IOException {
         // Create an entry for the file
+        if(!file.exists())
+            return;
         taos.putArchiveEntry(new TarArchiveEntry(file, dir + File.separator + file.getName()));
         if (file.isFile()) {
             // Add the file to the archive

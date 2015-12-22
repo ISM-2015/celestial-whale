@@ -7,9 +7,9 @@ import difflib.Patch;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+
+
 
 /**
  * Created by lightwave on 17.12.15.
@@ -46,10 +46,69 @@ public class FileUtils {
             }
             bw.close();
         } catch (Exception e) {
-            System.out.println("write exception" + e.toString());
+            e.printStackTrace();
         }
     }
 
+    public static void deleteDirectory(String path) {
+        File dir = new File(path);
+        File[] files = dir.listFiles();
+        for(int i =0; i < files.length && files != null; i++) {
+            if(files[i].isFile())
+                files[i].delete();
+            if(files[i].isDirectory())
+                deleteDirectory(files[i].getAbsolutePath());
+        }
+        dir.delete();
+    }
+
+    public static void compareAndEdit(Collection<File> col1, Collection<File> col2, String base1, String base2) {
+
+        Iterator<File> i1 = col1.iterator();
+        while(i1.hasNext()) {
+            Iterator<File> i2 = col2.iterator();
+            File fstFile = i1.next();
+            while(i2.hasNext()) {
+                File secFile = i2.next();
+                if(isRelativePathSame(fstFile, secFile, base1, base2)) {
+                    if(fstFile.isDirectory() && secFile.isDirectory()) {
+                        if(fstFile.listFiles() == null || fstFile.listFiles().length == 0) {
+                            secFile.delete();
+                        }
+                        else if(fstFile.listFiles() == null || fstFile.listFiles().length == 0) {
+                            continue;
+                        } else {
+                            compareAndEdit(java.util.Arrays.asList(fstFile.listFiles()), java.util.Arrays.asList(secFile.listFiles()), base1, base2 );
+                        }
+                    }
+                    if(fstFile.isFile() && secFile.isFile()) {
+                        if(fstFile.length() > 100000 || secFile.length() > 100000) {
+                            System.out.println("Large file conflict: " + fstFile.getAbsolutePath().substring(base1.length()));
+                            if(fstFile.length() == secFile.length()) {
+
+                                secFile.delete();
+                            }
+                        } else {
+                            System.out.println("Small file conflict: " + fstFile.getAbsolutePath().substring(base1.length()));
+                            if(compareFiles(secFile, fstFile, null)) {
+                                secFile.delete();
+                            }
+                            else {
+                                secFile.delete();
+                            }
+                        }
+                    }
+                    continue;
+                }
+            }
+        }
+    }
+
+    public static boolean isRelativePathSame(File file1, File file2, String base1, String base2) {
+        String rel1 = file1.getAbsolutePath().substring(base1.length()),
+                rel2 = file2.getAbsolutePath().substring(base2.length());
+        return  rel1.equals(rel2);
+    }
 
     public static boolean compareFiles(File file1, File file2, File resFile) {
         List<String> first = fileToLines(file1);
@@ -68,7 +127,7 @@ public class FileUtils {
 
                 writeLinesToFile(res, resFile);
             } catch ( Exception e) {
-                System.out.println("patch exception" + e.toString());
+                e.printStackTrace();
             }
         }
 

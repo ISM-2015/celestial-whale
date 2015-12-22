@@ -2,10 +2,14 @@ package leti.etu.docker.merge;
 
 import leti.etu.docker.util.FileUtils;
 import leti.etu.docker.util.ImageIdGenerator;
+import leti.etu.docker.util.TarCompresser;
 import leti.etu.docker.util.TarDecompresser;
 import org.json.simple.JSONObject;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -20,11 +24,15 @@ public class Image {
     TarDecompresser decompresser;
     String basicDir;
     String fileName;
-    File repossitories;
+    File repositories;
     JSONObject reps;
 
     public List<File> getFiles() {
         return files;
+    }
+
+    public void clean() {
+        decompresser.deleteOutputs();
     }
 
     public Image(String basicDir, String fileName) {
@@ -37,13 +45,13 @@ public class Image {
         files = decompresser.getFiles();
         for(int i = 0; i < files.size(); i++) {
             if(files.get(i).getName().equals("repositories")) {
-
+                repositories = files.get(i);
             }
             if(files.get(i).isDirectory()) {
                 Layer temp = new Layer(files.get(i));
+                temp.getChanges();
                 layers.add(temp);
-     //           System.out.println("Layer ID:" + temp.getId());
-     //           System.out.println("Layer Parent:" + temp.getParent());
+
             }
         }
     }
@@ -68,12 +76,34 @@ public class Image {
         }
         return lastLayer;
     }
+    private void createMerged(Layer newLayer, String repAddr, String name) {
+        String newId = addLayer(newLayer);
 
-    public void addLayer(Layer newLayer) {
-        List<File> layerFiles = new ArrayList<File>();
-
+        JSONObject latest = new JSONObject();
+        latest.put("latest", newId);
+        JSONObject rep = new JSONObject();
+        rep.put(name, latest);
+        try {
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(repositories)));
+            writer.write(rep.toJSONString());
+            writer.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        File oldImage = new File(basicDir + "/" + decompresser.getOutputName());
+        File mergedImage = new File(repAddr);
+        try {
+            mergedImage.createNewFile();
+            TarCompresser.compressFiles(java.util.Arrays.asList(oldImage.listFiles()), mergedImage);
+        } catch ( Exception e) {
+            e.printStackTrace();
+        }
+    }
+    public String addLayer(Layer newLayer) {
         String  newPath = basicDir + "/" + decompresser.getOutputName() + "/";
-        newLayer.copyLayerTo(newPath, ImageIdGenerator.generateId(), getTopLayer().getId());
+        String newId = ImageIdGenerator.generateId();
+        layers.add(newLayer.copyLayerTo(newPath, newId, getTopLayer().getId()));
+        return newId;
     }
 
     public Image createCopy(String basicDir, String name) {
@@ -95,20 +125,29 @@ public class Image {
                     FileUtils.copy(files.get(i), output);
                 }
             } catch (Exception e) {
-                System.out.println("Copying file error:" + e.toString());
+                e.printStackTrace();
             }
         }
         return null;
     }
 
-    public boolean merge(Image toMerge) {
+    public boolean merge(Image toMerge, String repName, String name) {
         Layer current = getTopLayer();
         Layer add = toMerge.getTopLayer();
-        if(current.getParent().equals(add.getParent())) {
+        String base1 = current.getLayerDir().getAbsolutePath() + "/" + current.getChangesDir(),
+                base2 = add.getLayerDir().getAbsolutePath() + "/" + add.getChangesDir();
+        if(!current.getParent().equals(add.getParent())) {
             System.out.println("Images have diffrent parents");
             return false;
         }
-        List<File> first = current.getChanges(), second = current.getChanges();
+        List<File> first = current.getChanges(), second = add.getChanges();
+        FileUtils.compareAndEdit(first, second, base1, base2);
+        add.makeNewTar(second);
+        add.deleteUntarChanges();
+        current.deleteUntarChanges();
+        createMerged(add, repName, name);
+
+
 
         return  true;
 

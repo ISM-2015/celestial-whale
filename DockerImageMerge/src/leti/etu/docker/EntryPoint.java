@@ -8,6 +8,7 @@ import leti.etu.docker.util.TarCompresser;
 import leti.etu.docker.util.TarDecompresser;
 
 import java.io.File;
+import java.nio.file.FileSystems;
 
 /**
  * Created by lightwave on 17.12.15.
@@ -15,27 +16,19 @@ import java.io.File;
 public class EntryPoint {
 
     public static void main(String[] args) {
-//        Image img = new Image("/home/lightwave/ideaTest", "test.tar");
-//        Image img2 = new Image("/home/lightwave/ideaTest", "happ.tar");
-        File file = new File("/home/lightwave/d.jpg");
-        File file2 = new File("/home/lightwave/p.jpg");
-        File res = new File("/home/lightwave/resfile.txt");
-        System.out.println("Size:" + file.length());
-        System.out.println("Size:" + file2.length());
-        try {
-            res.createNewFile();
-        } catch (Exception e) {
-
+        if(args.length < 3) {
+            System.out.println("Not enough arguments");
+            return;
         }
+        File i1 = new File(args[0]);
+        File i2 = new File(args[1]);
+        File res = new File(args[2]);
+        Image img = new Image(i1.getParent(), i1.getName());
+        Image img2 = new Image(i2.getParent(), i2.getName());
 
-        //FileUtils.compareFiles(file, file2, null);
+        img.merge(img2, res.getAbsolutePath(), args.length >=4 ? args[3] : "mergedImage");
+        img.clean();
+        img2.clean();
 
-//        try {
-//            file.createNewFile();
-//            TarCompresser.compressFiles(img.getFiles(), file);
-//        } catch (Exception e) {
-//
-//        }
-        //img2.addLayer(img.getTopLayer());
     }
 }

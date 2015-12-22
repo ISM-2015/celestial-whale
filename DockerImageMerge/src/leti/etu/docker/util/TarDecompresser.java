@@ -8,6 +8,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.utils.IOUtils;
 
 import java.io.*;
+import java.nio.file.*;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Date;
@@ -29,7 +30,10 @@ public class TarDecompresser {
     public String getOutputName() {
         return outputName;
     }
+    public void deleteOutputs() {
+        FileUtils.deleteDirectory(basicDir + "/" + outputName);
 
+    }
     public TarDecompresser(String basicDir, String inputFile) {
         this.basicDir  = basicDir;
         this.inputFile = inputFile;
@@ -43,7 +47,7 @@ public class TarDecompresser {
         try {
             files = unTar(input, output);
         } catch (Exception e) {
-            System.out.println("Decompessing error: " + e.toString());
+            e.printStackTrace();
         }
     }
 

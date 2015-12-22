@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Class-Path: lib/json-simple-1.1.1.jar lib/commons-compress-1.10.jar li
+ b/diffutils-1.2.1.jar
+Main-Class: leti.etu.docker.EntryPoint
+

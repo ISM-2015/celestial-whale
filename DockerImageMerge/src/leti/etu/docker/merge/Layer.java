@@ -1,29 +1,37 @@
 package leti.etu.docker.merge;
 
 import leti.etu.docker.util.FileUtils;
+import leti.etu.docker.util.TarCompresser;
 import leti.etu.docker.util.TarDecompresser;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
  * Created by lightwave on 17.12.15.
  */
 public class Layer {
+    private TarDecompresser dcmp;
+    private File layerDir;
+    private File json;
+    private File layer;
+    private File version;
+    private JSONObject metainfo;
+    private List<File> changes = null;
+    private String id;
+    private String parent = null;
+    private String changesDir = null;
 
-    File layerDir;
-    File json;
-    File layer;
-    File version;
-    JSONObject metainfo;
-    List<File> changes = null;
-    String id;
-    String parent = null;
-
-
+    public String getChangesDir() {
+        if(changesDir == null) {
+            processTarFile(layer);
+        }
+        return changesDir;
+    }
 
     public Layer(File layerDir) {
         this.layerDir = layerDir;
@@ -52,7 +60,7 @@ public class Layer {
         try {
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(json)));
         } catch (Exception e) {
-            System.out.println("Json file exception: " + e.toString());
+            e.printStackTrace();
             return;
         }
         StringBuilder out = new StringBuilder();
@@ -62,7 +70,7 @@ public class Layer {
                 out.append(line);
             }
         } catch (Exception e) {
-            System.out.println("Read json file exception: " + e.toString());
+            e.printStackTrace();
         }
 
         Object temp = JSONValue.parse(out.toString());
@@ -72,9 +80,10 @@ public class Layer {
     }
 
     public void processTarFile(File tar) {
-        TarDecompresser decompresser = new TarDecompresser(layerDir.getAbsolutePath(), tar.getName());
-        decompresser.decompress();
-        changes = decompresser.getFiles();
+        dcmp = new TarDecompresser(layerDir.getAbsolutePath(), tar.getName());
+        dcmp.decompress();
+        changesDir = dcmp.getOutputName();
+        changes = dcmp.getFiles();
     }
 
     public Layer copyLayerTo(String path, String newID, String parent) {
@@ -92,21 +101,33 @@ public class Layer {
             writer.write(newMeta.toJSONString());
             writer.close();
         } catch (Exception e) {
-            System.out.println("New layer json creation error: " + e.toString());
+            e.printStackTrace();
         }
         File newTar = new File(path + "/layer.tar");
         try {
             FileUtils.copy(layer, newTar);
         } catch (Exception e) {
-            System.out.println("New layer file creation error: " + e.toString());
+            e.printStackTrace();
         }
         File newVers = new File(path + "/VERSION");
         try {
             FileUtils.copy(version, newVers);
         } catch (Exception e) {
-            System.out.println("New layer version creation error: " + e.toString());
+            e.printStackTrace();
         }
-        return null;
+        Layer layer = new Layer(newLayerDir);
+        return layer;
+    }
+
+    public void makeNewTar(Collection<File> coll) {
+        layer.delete();
+        try {
+            layer.createNewFile();
+            TarCompresser.compressFiles(coll, layer);
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     public File getJson() {
@@ -175,4 +196,10 @@ public class Layer {
     public void setChanges(List<File> changes) {
         this.changes = changes;
     }
+
+    public void deleteUntarChanges() {
+        if(dcmp != null)
+            dcmp.deleteOutputs();
+    }
+
 }
